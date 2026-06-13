@@ -34,22 +34,13 @@ export function exportSTL(meshes: THREE.Mesh[]): ArrayBuffer {
     };
   });
 
-  // Binary STL Structure:
-  // 80-byte header
-  // 4-byte triangle count (uint32)
-  // For each triangle:
-  //   12-byte normal vector (3 x float32)
-  //   12-byte vertex 1 (3 x float32)
-  //   12-byte vertex 2 (3 x float32)
-  //   12-byte vertex 3 (3 x float32)
-  //   2-byte attribute byte count (uint16, set to 0)
-  // Total size: 84 + (triangle count * 50) bytes
+  // Binary STL: 84 bytes header + (Triangle Count * 50) bytes
   const bufferSize = 84 + (totalTriangles * 50);
   const buffer = new ArrayBuffer(bufferSize);
   const view = new DataView(buffer);
 
-  // Write 80-byte header
-  const headerText = 'Exported from BracketCraft client-side STL generator';
+  // Write header
+  const headerText = 'Exported from 3D Generator Engine client-side exporter';
   for (let i = 0; i < Math.min(headerText.length, 80); i++) {
     view.setUint8(i, headerText.charCodeAt(i));
   }
@@ -133,4 +124,15 @@ export function downloadSTL(buffer: ArrayBuffer, filename: string): void {
   document.body.removeChild(link);
   
   URL.revokeObjectURL(url);
+}
+export function getTriangleCount(meshes: THREE.Mesh[]): number {
+  let count = 0;
+  for (const mesh of meshes) {
+    const pos = mesh.geometry.getAttribute('position');
+    const idx = mesh.geometry.getIndex();
+    if (pos) {
+      count += idx ? idx.count / 3 : pos.count / 3;
+    }
+  }
+  return count;
 }

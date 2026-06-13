@@ -37,75 +37,8 @@
         </div>
       </section>
 
-      <div class="scrollable-controls">
-        <section class="parameter-section">
-          <h3>Dimensions (mm)</h3>
-          
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-width">Horizontal Leg (X)</label>
-              <span class="value-display" id="val-width">50</span>
-            </div>
-            <input type="range" id="input-width" min="20" max="150" value="50" step="1">
-          </div>
-
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-height">Vertical Leg (Y)</label>
-              <span class="value-display" id="val-height">60</span>
-            </div>
-            <input type="range" id="input-height" min="20" max="150" value="60" step="1">
-          </div>
-
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-depth">Width / Depth (Z)</label>
-              <span class="value-display" id="val-depth">30</span>
-            </div>
-            <input type="range" id="input-depth" min="10" max="100" value="30" step="1">
-          </div>
-
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-thickness">Material Thickness</label>
-              <span class="value-display" id="val-thickness">4</span>
-            </div>
-            <input type="range" id="input-thickness" min="2" max="15" value="4" step="0.5">
-          </div>
-
-          <h3>Holes</h3>
-
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-hole-dia">Hole Diameter</label>
-              <span class="value-display" id="val-hole-dia">5.0</span>
-            </div>
-            <input type="range" id="input-hole-dia" min="0" max="16" value="5" step="0.5">
-          </div>
-
-          <div class="input-group">
-            <div class="input-header">
-              <label for="input-hole-count">Holes per Leg</label>
-              <span class="value-display" id="val-hole-count">2</span>
-            </div>
-            <input type="range" id="input-hole-count" min="0" max="4" value="2" step="1">
-          </div>
-
-          <h3>Reinforcement</h3>
-
-          <div class="input-group-checkbox">
-            <input type="checkbox" id="input-gusset" checked>
-            <label for="input-gusset">Add Reinforcing Gusset</label>
-          </div>
-
-          <div class="input-group" id="gusset-thickness-group">
-            <div class="input-header">
-              <label for="input-gusset-thickness">Gusset Thickness</label>
-              <span class="value-display" id="val-gusset-thickness">4.0</span>
-            </div>
-            <input type="range" id="input-gusset-thickness" min="1" max="12" value="4" step="0.5">
-          </div>
-        </section>
+      <div class="scrollable-controls" id="controls-container">
+        <!-- Sliders and checkboxes will be dynamically rendered here by the AppBuilder -->
       </div>
 
       <footer class="actions">
