@@ -6,7 +6,7 @@ export const fixtureConfig: AppConfig = {
   tagline: 'Custom Enclosure & Cradle Exporter',
   exportNamePrefix: 'fixture',
   generator: generateFixture,
-  presets: {
+  styles: {
     phone: {
       innerLength: 80,
       innerWidth: 16,

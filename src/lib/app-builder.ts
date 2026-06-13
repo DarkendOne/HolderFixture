@@ -17,7 +17,7 @@ export interface ParamSchema {
 export interface AppConfig {
   title: string;
   tagline: string;
-  presets: Record<string, Record<string, any>>;
+  styles: Record<string, Record<string, any>>;
   schema: ParamSchema[];
   generator: (params: Record<string, any>) => THREE.Mesh[];
   exportNamePrefix: string;
@@ -33,7 +33,7 @@ export class AppBuilder {
   private btnExport!: HTMLButtonElement;
   private exportStats!: HTMLElement;
   private statsBadge!: HTMLElement;
-  private presetButtons: Record<string, HTMLButtonElement> = {};
+  private styleButtons: Record<string, HTMLButtonElement> = {};
 
   constructor(
     config: AppConfig,
@@ -63,7 +63,7 @@ export class AppBuilder {
     // Render configuration inputs in the sidebar
     this.renderUI();
 
-    // Bind preset and export button handlers
+    // Bind style and export button handlers
     this.bindActions();
 
     // Initial render
@@ -119,7 +119,7 @@ export class AppBuilder {
 
         input.addEventListener('input', () => {
           this.currentParams[item.id] = parseFloat(input.value);
-          this.clearActivePresetStyles();
+          this.clearActiveStyleStyles();
           this.updateApp();
         });
 
@@ -143,7 +143,7 @@ export class AppBuilder {
 
         input.addEventListener('change', () => {
           this.currentParams[item.id] = input.checked;
-          this.clearActivePresetStyles();
+          this.clearActiveStyleStyles();
           this.updateApp();
         });
 
@@ -159,42 +159,42 @@ export class AppBuilder {
       this.btnExport.addEventListener('click', () => this.handleExport());
     }
 
-    Object.keys(this.config.presets).forEach(key => {
-      const btn = document.getElementById(`preset-${key}`) as HTMLButtonElement;
+    Object.keys(this.config.styles).forEach(key => {
+      const btn = document.getElementById(`style-${key}`) as HTMLButtonElement;
       if (btn) {
-        this.presetButtons[key] = btn;
-        btn.addEventListener('click', () => this.applyPreset(key));
+        this.styleButtons[key] = btn;
+        btn.addEventListener('click', () => this.applyStyle(key));
       }
     });
   }
 
-  private applyPreset(name: string) {
-    const preset = this.config.presets[name];
-    if (!preset) return;
+  private applyStyle(name: string) {
+    const style = this.config.styles[name];
+    if (!style) return;
 
-    Object.keys(preset).forEach(key => {
-      this.currentParams[key] = preset[key];
+    Object.keys(style).forEach(key => {
+      this.currentParams[key] = style[key];
 
       const input = document.getElementById(`input-${key}`) as HTMLInputElement;
       if (input) {
         if (input.type === 'checkbox') {
-          input.checked = Boolean(preset[key]);
+          input.checked = Boolean(style[key]);
         } else {
-          input.value = String(preset[key]);
+          input.value = String(style[key]);
         }
       }
     });
 
-    Object.keys(this.presetButtons).forEach(key => {
-      this.presetButtons[key].classList.toggle('active', key === name);
+    Object.keys(this.styleButtons).forEach(key => {
+      this.styleButtons[key].classList.toggle('active', key === name);
     });
 
     this.updateApp();
   }
 
-  private clearActivePresetStyles() {
-    Object.keys(this.presetButtons).forEach(key => {
-      this.presetButtons[key].classList.remove('active');
+  private clearActiveStyleStyles() {
+    Object.keys(this.styleButtons).forEach(key => {
+      this.styleButtons[key].classList.remove('active');
     });
   }
 
