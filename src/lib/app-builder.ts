@@ -2,17 +2,28 @@ import * as THREE from 'three';
 import { ThreeViewer } from './viewer';
 import { exportSTL, downloadSTL, getTriangleCount } from './exporter';
 
-export interface ParamSchema {
+export interface BaseParamSchema {
   id: string;
   label: string;
-  type: 'range' | 'checkbox';
+  type: string;
+  showIf?: (params: Record<string, any>) => boolean;
+}
+
+export interface RangeParamSchema extends BaseParamSchema {
+  type: 'range';
   min?: number;
   max?: number;
   step?: number;
-  default: number | boolean;
+  default: number;
   unit?: string;
-  showIf?: (params: Record<string, any>) => boolean;
 }
+
+export interface CheckboxParamSchema extends BaseParamSchema {
+  type: 'checkbox';
+  default: boolean;
+}
+
+export type ParamSchema = RangeParamSchema | CheckboxParamSchema;
 
 export interface AppConfig {
   title: string;
@@ -90,20 +101,22 @@ export class AppBuilder {
 
     this.config.schema.forEach(item => {
       if (item.type === 'range') {
+        console.log('item is RangeParamSchema');
+        const rangeParam = item as RangeParamSchema;
         const group = document.createElement('div');
         group.className = 'input-group';
-        group.id = `group-${item.id}`;
+        group.id = `group-${rangeParam.id}`;
 
         const header = document.createElement('div');
         header.className = 'input-header';
 
         const label = document.createElement('label');
-        label.setAttribute('for', `input-${item.id}`);
-        label.textContent = item.label;
+        label.setAttribute('for', `input-${rangeParam.id}`);
+        label.textContent = rangeParam.label;
 
         const valSpan = document.createElement('span');
         valSpan.className = 'value-display';
-        valSpan.id = `val-${item.id}`;
+        valSpan.id = `val-${rangeParam.id}`;
         valSpan.textContent = String(item.default);
 
         header.appendChild(label);
@@ -111,14 +124,14 @@ export class AppBuilder {
 
         const input = document.createElement('input');
         input.type = 'range';
-        input.id = `input-${item.id}`;
-        input.min = String(item.min ?? 0);
-        input.max = String(item.max ?? 100);
-        input.step = String(item.step ?? 1);
-        input.value = String(this.currentParams[item.id]);
+        input.id = `input-${rangeParam.id}`;
+        input.min = String(rangeParam.min ?? 0);
+        input.max = String(rangeParam.max ?? 100);
+        input.step = String(rangeParam.step ?? 1);
+        input.value = String(this.currentParams[-rangeParam.id]);
 
         input.addEventListener('input', () => {
-          this.currentParams[item.id] = parseFloat(input.value);
+          this.currentParams[rangeParam.id] = parseFloat(input.value);
           this.clearActiveStyleStyles();
           this.updateApp();
         });
@@ -128,18 +141,19 @@ export class AppBuilder {
         section.appendChild(group);
 
       } else if (item.type === 'checkbox') {
+        const checkboxParam = item as CheckboxParamSchema;
         const group = document.createElement('div');
         group.className = 'input-group-checkbox';
-        group.id = `group-${item.id}`;
+        group.id = `group-${checkboxParam.id}`;
 
         const input = document.createElement('input');
         input.type = 'checkbox';
-        input.id = `input-${item.id}`;
-        input.checked = Boolean(this.currentParams[item.id]);
+        input.id = `input-${checkboxParam.id}`;
+        input.checked = Boolean(this.currentParams[checkboxParam.id]);
 
         const label = document.createElement('label');
-        label.setAttribute('for', `input-${item.id}`);
-        label.textContent = item.label;
+        label.setAttribute('for', `input-${checkboxParam.id}`);
+        label.textContent = checkboxParam.label;
 
         input.addEventListener('change', () => {
           this.currentParams[item.id] = input.checked;
@@ -212,17 +226,24 @@ export class AppBuilder {
     this.config.schema.forEach(item => {
       const display = document.getElementById(`val-${item.id}`);
       if (display) {
-        const value = this.currentParams[item.id];
-        const decimals = (item.step && item.step % 1 !== 0) ? 1 : 0;
-        display.textContent = (typeof value === 'number')
-          ? value.toFixed(decimals) + (item.unit ? ` ${item.unit}` : '')
-          : String(value);
+        if (item instanceof RangeParamSchema) {
+          const rangeParam = item as RangeParamSchema;
+          const value = this.currentParams[rangeParam.id];
+          const decimals = (rangeParam.step && rangeParam.step % 1 !== 0) ? 1 : 0;
+          display.textContent = (typeof value === 'number')
+            ? value.toFixed(decimals) + (rangeParam.unit ? ` ${rangeParam.unit}` : '')
+            : String(value);
+        } else if (item instanceof CheckboxParamSchema) {
+          const checkboxParam = item as CheckboxParamSchema;
+          const value = this.currentParams[checkboxParam.id];
+          display.textContent = String(value);
+        }
       }
     });
 
     // 3. Request new geometry from user callback
     const meshes = this.config.generator(this.currentParams);
-    
+
     // 4. Update the viewer
     this.viewer.setMeshes(meshes);
 
