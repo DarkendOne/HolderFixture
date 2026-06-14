@@ -1,8 +1,10 @@
 # Node & Dependencies
 jspm_packages/
 web_modules/
+node_modules/
 
 # Production Build Output
+dist/
 dist-ssr/
 build/
 
