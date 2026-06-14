@@ -204,14 +204,14 @@ export class AppBuilder {
     this.config.schema.forEach(item => {
       const display = document.getElementById(`val-${item.id}`);
       if (display) {
-        if (item instanceof RangeParamSchema) {
+        if (item.type === 'range') {
           const rangeParam = item as RangeParamSchema;
           const value = this.currentParams[rangeParam.id];
           const decimals = (rangeParam.step && rangeParam.step % 1 !== 0) ? 1 : 0;
           display.textContent = (typeof value === 'number')
             ? value.toFixed(decimals) + (rangeParam.unit ? ` ${rangeParam.unit}` : '')
             : String(value);
-        } else if (item instanceof CheckboxParamSchema) {
+        } else if (item.type === 'checkbox') {
           const checkboxParam = item as CheckboxParamSchema;
           const value = this.currentParams[checkboxParam.id];
           display.textContent = String(value);
