@@ -1,21 +1,22 @@
 import * as THREE from 'three';
 import { ThreeViewer } from './viewer';
 import { exportSTL, downloadSTL, getTriangleCount } from './exporter';
-import { ParamSchema, RangeParamSchema, CheckboxParamSchema } from './schema';
+import { ParamSchema, RangeParamSchema, CheckboxParamSchema, FixtureParameters } from './schema';
+import { BracketParameters } from '../fixture/config';
 
-export interface AppConfig {
+export interface AppConfig<F extends FixtureParameters> {
+
   title: string;
   tagline: string;
-  styles: Record<string, Record<string, any>>;
-  schema: ParamSchema[];
-  generator: (params: Record<string, any>) => THREE.Mesh[];
+  styles: Record<string, BracketParameters>;
+  schema: F;
+  generator: (params: F) => THREE.Mesh[];
   exportNamePrefix: string;
 }
 
-export class AppBuilder {
-  private config: AppConfig;
+export class AppBuilder<F extends FixtureParameters> {
+  private config: AppConfig<F>;
   private viewer: ThreeViewer;
-  private currentParams: Record<string, any> = {};
 
   // DOM elements
   private controlsContainer: HTMLElement;
@@ -25,7 +26,7 @@ export class AppBuilder {
   private styleButtons: Record<string, HTMLButtonElement> = {};
 
   constructor(
-    config: AppConfig,
+    config: AppConfig<F>,
     controlsContainerId: string,
     canvasContainerId: string
   ) {
@@ -43,11 +44,6 @@ export class AppBuilder {
 
     // Initialize Three.js scene
     this.viewer = new ThreeViewer(canvasContainer);
-
-    // Seed default parameters
-    for (const item of this.config.schema) {
-      this.currentParams[item.id] = item.default;
-    }
 
     // Render configuration inputs in the sidebar
     this.renderUI();
@@ -77,7 +73,10 @@ export class AppBuilder {
     section.className = 'parameter-section';
     this.controlsContainer.appendChild(section);
 
-    this.config.schema.forEach(item => {
+    console.log('this.config.schema', this.config.schema.params.size);
+
+    this.config.schema.params.forEach(item => {
+      console.log('item is RangeParamSchema');
       if (item.type === 'range') {
         console.log('item is RangeParamSchema');
         const rangeParam = item as RangeParamSchema;
@@ -106,10 +105,10 @@ export class AppBuilder {
         input.min = String(rangeParam.min ?? 0);
         input.max = String(rangeParam.max ?? 100);
         input.step = String(rangeParam.step ?? 1);
-        input.value = String(this.currentParams[-rangeParam.id]);
+        input.value = String(rangeParam.value);
 
         input.addEventListener('input', () => {
-          this.currentParams[rangeParam.id] = parseFloat(input.value);
+          rangeParam.value = parseFloat(input.value);
           this.clearActiveStyleStyles();
           this.updateApp();
         });
@@ -127,14 +126,14 @@ export class AppBuilder {
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.id = `input-${checkboxParam.id}`;
-        input.checked = Boolean(this.currentParams[checkboxParam.id]);
+        input.checked = checkboxParam.value;
 
         const label = document.createElement('label');
         label.setAttribute('for', `input-${checkboxParam.id}`);
         label.textContent = checkboxParam.label;
 
         input.addEventListener('change', () => {
-          this.currentParams[item.id] = input.checked;
+          checkboxParam.value = input.checked;
           this.clearActiveStyleStyles();
           this.updateApp();
         });
@@ -164,15 +163,15 @@ export class AppBuilder {
     const style = this.config.styles[name];
     if (!style) return;
 
-    Object.keys(style).forEach(key => {
-      this.currentParams[key] = style[key];
-
-      const input = document.getElementById(`input-${key}`) as HTMLInputElement;
+    Object.keys(style.params).forEach(key => {
+      const param = this.config.schema.params.get(key) as ParamSchema;
+      param.value = style.params.get(key)!.value;
+      const input = document.getElementById(`input-${param.id}`) as HTMLInputElement;
       if (input) {
         if (input.type === 'checkbox') {
-          input.checked = Boolean(style[key]);
+          input.checked = Boolean(param.value);
         } else {
-          input.value = String(style[key]);
+          input.value = String(param.value);
         }
       }
     });
@@ -192,46 +191,42 @@ export class AppBuilder {
 
   private updateApp() {
     // 1. Evaluate conditional visibility (showIf)
-    this.config.schema.forEach(item => {
+    this.config.schema.params.forEach(item => {
       const group = document.getElementById(`group-${item.id}`);
       if (group) {
-        const isVisible = item.showIf ? item.showIf(this.currentParams) : true;
+        const isVisible = item.showIf ? item.showIf(this.config.schema) : true;
         group.classList.toggle('hidden', !isVisible);
       }
     });
 
     // 2. Sync values with display badges in the UI
-    this.config.schema.forEach(item => {
+    this.config.schema.params.forEach(item => {
       const display = document.getElementById(`val-${item.id}`);
       if (display) {
         if (item.type === 'range') {
           const rangeParam = item as RangeParamSchema;
-          const value = this.currentParams[rangeParam.id];
+          const value = rangeParam.value;
           const decimals = (rangeParam.step && rangeParam.step % 1 !== 0) ? 1 : 0;
           display.textContent = (typeof value === 'number')
             ? value.toFixed(decimals) + (rangeParam.unit ? ` ${rangeParam.unit}` : '')
             : String(value);
         } else if (item.type === 'checkbox') {
           const checkboxParam = item as CheckboxParamSchema;
-          const value = this.currentParams[checkboxParam.id];
+          const value = checkboxParam.value;
           display.textContent = String(value);
         }
       }
     });
 
     // 3. Request new geometry from user callback
-    const meshes = this.config.generator(this.currentParams);
+    const meshes = this.config.generator(this.config.schema);
 
     // 4. Update the viewer
     this.viewer.setMeshes(meshes);
 
     // 5. Update stats cards
     if (this.statsBadge) {
-      const parts: string[] = [];
-      if (this.currentParams.width) parts.push(this.currentParams.width.toFixed(0));
-      if (this.currentParams.height) parts.push(this.currentParams.height.toFixed(0));
-      if (this.currentParams.depth) parts.push(this.currentParams.depth.toFixed(0));
-
+      const parts: string[] = ['end'];
       if (parts.length > 0) {
         this.statsBadge.textContent = `Dimension: ${parts.join(' x ')} mm`;
       }
@@ -249,9 +244,7 @@ export class AppBuilder {
     const meshes = this.viewer.getMeshes();
     if (meshes.length === 0) return;
 
-    const prefix = this.config.exportNamePrefix;
-    const sizeStr = `${this.currentParams.width ?? ''}x${this.currentParams.height ?? ''}x${this.currentParams.depth ?? ''}`;
-    const filename = `${prefix}_${sizeStr}_t${this.currentParams.thickness ?? ''}.stl`;
+    const filename = `${this.config.schema.generateFilename()}.stl`;
 
     const buffer = exportSTL(meshes);
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { BracketParameters } from './config';
 
 // Shared premium material for the fixture
 const fixtureMaterial = new THREE.MeshStandardMaterial({
@@ -11,19 +12,19 @@ const fixtureMaterial = new THREE.MeshStandardMaterial({
 /**
  * Procedural geometry generator for a rectangular object holding fixture
  */
-export function generateFixture(params: Record<string, any>): THREE.Mesh[] {
+export function generateFixture(params: BracketParameters): THREE.Mesh[] {
   const meshes: THREE.Mesh[] = [];
 
   // Inputs
-  const innerLength = params.innerLength as number;
-  const innerWidth = params.innerWidth as number;
-  const pocketDepth = params.pocketDepth as number;
-  const clearance = params.clearance as number;
-  const baseThickness = params.baseThickness as number;
-  const wallThickness = params.wallThickness as number;
-  const flangeWidth = params.flangeWidth as number;
-  const holeDia = params.holeDia as number;
-  const fingerCutout = params.fingerCutout as boolean;
+  const innerLength = params.innerLength.value;
+  const innerWidth = params.innerWidth.value;
+  const pocketDepth = params.pocketDepth.value;
+  const clearance = params.clearance.value;
+  const baseThickness = params.baseThickness.value;
+  const wallThickness = params.wallThickness.value;
+  const flangeWidth = params.flangeWidth.value;
+  const holeDia = params.holeDia.value;
+  const fingerCutout = params.fingerCutout.value;
 
   // Compute pocket inside dimensions (with clearance)
   const L_in = innerLength + clearance;
@@ -110,7 +111,7 @@ export function generateFixture(params: Record<string, any>): THREE.Mesh[] {
 
   if (tabLength > 1) {
     const geomFrontTab = new THREE.BoxGeometry(tabLength, pocketDepth, wallThickness);
-    
+
     // Left Front Tab
     const frontLeftMesh = new THREE.Mesh(geomFrontTab, wallMaterial);
     const flX = -L_outer / 2 + tabLength / 2;
