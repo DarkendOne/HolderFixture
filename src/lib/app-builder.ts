@@ -163,9 +163,11 @@ export class AppBuilder<F extends FixtureParameters> {
     const style = this.config.styles[name];
     if (!style) return;
 
-    Object.keys(style.params).forEach(key => {
+    for (const [key, sourceParam] of style.params.entries()) {
       const param = this.config.schema.params.get(key) as ParamSchema;
-      param.value = style.params.get(key)!.value;
+      if (!param) continue;
+      
+      param.value = sourceParam.value;
       const input = document.getElementById(`input-${param.id}`) as HTMLInputElement;
       if (input) {
         if (input.type === 'checkbox') {
@@ -174,7 +176,7 @@ export class AppBuilder<F extends FixtureParameters> {
           input.value = String(param.value);
         }
       }
-    });
+    }
 
     Object.keys(this.styleButtons).forEach(key => {
       this.styleButtons[key].classList.toggle('active', key === name);
