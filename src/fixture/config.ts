@@ -101,7 +101,9 @@ export class BracketParameters extends FixtureParameters {
     value: true
   };
 
-  constructor(innerLength: number,
+  constructor(styleId: string,
+    displayStyleName: string,
+    innerLength: number,
     innerWidth: number,
     pocketDepth: number,
     clearance: number,
@@ -110,7 +112,7 @@ export class BracketParameters extends FixtureParameters {
     flangeWidth: number,
     holeDia: number,
     fingerCutout: boolean) {
-    super();
+    super(styleId, displayStyleName);
     this.innerLength.value = innerLength;
     this.innerWidth.value = innerWidth;
     this.pocketDepth.value = pocketDepth;
@@ -145,7 +147,7 @@ export const fixtureConfig: AppConfig<BracketParameters> = {
   exportNamePrefix: 'fixture',
   generator: generateFixture,
   styles: {
-    phone: new BracketParameters(
+    phone: new BracketParameters('phone', 'Phone',
       80,
       16,
       45,
@@ -156,7 +158,7 @@ export const fixtureConfig: AppConfig<BracketParameters> = {
       4.5,
       true
     ),
-    cards: new BracketParameters(
+    cards: new BracketParameters('cards', 'Cards',
       65,
       92,
       25,
@@ -167,7 +169,7 @@ export const fixtureConfig: AppConfig<BracketParameters> = {
       0,
       true
     ),
-    battery: new BracketParameters(
+    battery: new BracketParameters('battery', 'Battery',
       100,
       30,
       15,
@@ -178,7 +180,7 @@ export const fixtureConfig: AppConfig<BracketParameters> = {
       3.5,
       false
     ),
-    underDesk: new BracketParameters(
+    underDesk: new BracketParameters('underDesk', 'Under Desk',
       150,
       60,
       40,
@@ -189,6 +191,5 @@ export const fixtureConfig: AppConfig<BracketParameters> = {
       5,
       false
     )
-  },
-  schema: new BracketParameters(80, 16, 45, 0.8, 4, 3.5, 15, 4.5, true)
+  }
 };

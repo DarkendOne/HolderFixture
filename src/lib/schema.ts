@@ -23,7 +23,15 @@ export interface CheckboxParamSchema extends BaseParamSchema<boolean> {
 export type ParamSchema = RangeParamSchema | CheckboxParamSchema;
 
 export abstract class FixtureParameters {
-    params = new Map<string, ParamSchema>();
+    styleId: string;
+    displayStyleName: string;
+    params: Map<string, ParamSchema>;
+
+    constructor(styleId: string, displayStyleName: string) {
+        this.styleId = styleId;
+        this.displayStyleName = displayStyleName;
+        this.params = new Map<string, ParamSchema>();
+    }
 
     add(param: ParamSchema): FixtureParameters {
         this.params.set(param.id, param);

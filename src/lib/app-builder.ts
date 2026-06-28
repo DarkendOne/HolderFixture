@@ -2,14 +2,12 @@ import * as THREE from 'three';
 import { ThreeViewer } from './viewer';
 import { exportSTL, downloadSTL, getTriangleCount } from './exporter';
 import { ParamSchema, RangeParamSchema, CheckboxParamSchema, FixtureParameters } from './schema';
-import { BracketParameters } from '../fixture/config';
 
 export interface AppConfig<F extends FixtureParameters> {
 
   title: string;
   tagline: string;
-  styles: Record<string, BracketParameters>;
-  schema: F;
+  styles: Record<string, F>;
   generator: (params: F) => THREE.Mesh[];
   exportNamePrefix: string;
 }
@@ -19,6 +17,7 @@ export class AppBuilder<F extends FixtureParameters> {
   private viewer: ThreeViewer;
 
   // DOM elements
+  private activeStyle: F;
   private controlsContainer: HTMLElement;
   private btnExport!: HTMLButtonElement;
   private exportStats!: HTMLElement;
@@ -31,6 +30,7 @@ export class AppBuilder<F extends FixtureParameters> {
     canvasContainerId: string
   ) {
     this.config = config;
+    this.activeStyle = Object.values(config.styles)[0];
 
     const canvasContainer = document.getElementById(canvasContainerId);
     const controlsContainer = document.getElementById(controlsContainerId);
@@ -69,16 +69,37 @@ export class AppBuilder<F extends FixtureParameters> {
   private renderUI() {
     this.controlsContainer.innerHTML = '';
 
+
+    const styleContainer = document.getElementById('style-buttons-container');
+    if (styleContainer) {
+      styleContainer.innerHTML = '';
+      let isFirst = true;
+      Object.keys(this.config.styles).forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-secondary${isFirst ? ' active' : ''}`;
+        btn.id = `style-${key}`;
+        btn.dataset.style = key;
+
+        btn.textContent = this.config.styles[key].displayStyleName;
+
+        styleContainer.appendChild(btn);
+        this.styleButtons[key] = btn;
+        btn.addEventListener('click', () => this.applyStyle(key));
+        isFirst = false;
+      });
+    }
+
+    this.renderInputButtons(this.activeStyle);
+
+  }
+
+  private renderInputButtons(paramSchema: F) {
     const section = document.createElement('section');
     section.className = 'parameter-section';
     this.controlsContainer.appendChild(section);
 
-    console.log('this.config.schema', this.config.schema.params.size);
-
-    this.config.schema.params.forEach(item => {
-      console.log('item is RangeParamSchema');
+    paramSchema.params.forEach(item => {
       if (item.type === 'range') {
-        console.log('item is RangeParamSchema');
         const rangeParam = item as RangeParamSchema;
         const group = document.createElement('div');
         group.className = 'input-group';
@@ -149,37 +170,16 @@ export class AppBuilder<F extends FixtureParameters> {
     if (this.btnExport) {
       this.btnExport.addEventListener('click', () => this.handleExport());
     }
-
-    const styleContainer = document.getElementById('style-buttons-container');
-    if (styleContainer) {
-      styleContainer.innerHTML = '';
-      let isFirst = true;
-      Object.keys(this.config.styles).forEach(key => {
-        const btn = document.createElement('button');
-        btn.className = `btn btn-secondary${isFirst ? ' active' : ''}`;
-        btn.id = `style-${key}`;
-        btn.dataset.style = key;
-        
-        // Format label: "underDesk" -> "Under Desk"
-        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        btn.textContent = label;
-        
-        styleContainer.appendChild(btn);
-        this.styleButtons[key] = btn;
-        btn.addEventListener('click', () => this.applyStyle(key));
-        isFirst = false;
-      });
-    }
   }
 
   private applyStyle(name: string) {
     const style = this.config.styles[name];
-    if (!style) return;
+    this.activeStyle = style;
 
     for (const [key, sourceParam] of style.params.entries()) {
-      const param = this.config.schema.params.get(key) as ParamSchema;
+      const param = this.activeStyle.params.get(key) as ParamSchema;
       if (!param) continue;
-      
+
       param.value = sourceParam.value;
       const input = document.getElementById(`input-${param.id}`) as HTMLInputElement;
       if (input) {
@@ -206,16 +206,16 @@ export class AppBuilder<F extends FixtureParameters> {
 
   private updateApp() {
     // 1. Evaluate conditional visibility (showIf)
-    this.config.schema.params.forEach(item => {
+    this.activeStyle.params.forEach(item => {
       const group = document.getElementById(`group-${item.id}`);
       if (group) {
-        const isVisible = item.showIf ? item.showIf(this.config.schema) : true;
+        const isVisible = item.showIf ? item.showIf(this.activeStyle) : true;
         group.classList.toggle('hidden', !isVisible);
       }
     });
 
     // 2. Sync values with display badges in the UI
-    this.config.schema.params.forEach(item => {
+    this.activeStyle.params.forEach(item => {
       const display = document.getElementById(`val-${item.id}`);
       if (display) {
         if (item.type === 'range') {
@@ -234,7 +234,7 @@ export class AppBuilder<F extends FixtureParameters> {
     });
 
     // 3. Request new geometry from user callback
-    const meshes = this.config.generator(this.config.schema);
+    const meshes = this.config.generator(this.activeStyle);
 
     // 4. Update the viewer
     this.viewer.setMeshes(meshes);
@@ -259,7 +259,7 @@ export class AppBuilder<F extends FixtureParameters> {
     const meshes = this.viewer.getMeshes();
     if (meshes.length === 0) return;
 
-    const filename = `${this.config.schema.generateFilename()}.stl`;
+    const filename = `${this.activeStyle.generateFilename()}.stl`;
 
     const buffer = exportSTL(meshes);
 
