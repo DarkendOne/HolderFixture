@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@darkendone/stl-generator": "^1.0.2",
     "three": "^0.165.0"
   },
   "devDependencies": {

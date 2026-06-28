@@ -1,6 +1,6 @@
-import { AppConfig } from '../lib/app-builder';
+import { AppConfig } from '@darkendone/stl-generator';
 import { generateFixture } from './generator';
-import { FixtureParameters, CheckboxParamSchema, RangeParamSchema } from '../lib/schema';
+import { FixtureParameters, CheckboxParamSchema, RangeParamSchema } from '@darkendone/stl-generator';
 
 export class BracketParameters extends FixtureParameters {
   innerLength: RangeParamSchema = {
