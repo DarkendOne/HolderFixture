@@ -150,13 +150,26 @@ export class AppBuilder<F extends FixtureParameters> {
       this.btnExport.addEventListener('click', () => this.handleExport());
     }
 
-    Object.keys(this.config.styles).forEach(key => {
-      const btn = document.getElementById(`style-${key}`) as HTMLButtonElement;
-      if (btn) {
+    const styleContainer = document.getElementById('style-buttons-container');
+    if (styleContainer) {
+      styleContainer.innerHTML = '';
+      let isFirst = true;
+      Object.keys(this.config.styles).forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = `btn btn-secondary${isFirst ? ' active' : ''}`;
+        btn.id = `style-${key}`;
+        btn.dataset.style = key;
+        
+        // Format label: "underDesk" -> "Under Desk"
+        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        btn.textContent = label;
+        
+        styleContainer.appendChild(btn);
         this.styleButtons[key] = btn;
         btn.addEventListener('click', () => this.applyStyle(key));
-      }
-    });
+        isFirst = false;
+      });
+    }
   }
 
   private applyStyle(name: string) {
